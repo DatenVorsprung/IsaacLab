@@ -29,6 +29,7 @@ parser.add_argument("--num_envs", type=int, default=None, help="Number of enviro
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
+parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -48,7 +49,7 @@ import numpy as np
 import os
 from datetime import datetime
 
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import VecNormalize
@@ -67,7 +68,11 @@ def main():
     env_cfg = parse_env_cfg(
         args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
-    agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_cfg_entry_point")
+
+    if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
+    else:
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_ppo_cfg_entry_point")
 
     # override configuration with command line arguments
     if args_cli.seed is not None:
@@ -121,7 +126,10 @@ def main():
         )
 
     # create agent from stable baselines
-    agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
+    if args_cli.algo == 'SAC':
+        agent = SAC(policy_arch, env, verbose=1, **agent_cfg)
+    else:
+        agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
     # configure the logger
     new_logger = configure(log_dir, ["stdout", "tensorboard"])
     agent.set_logger(new_logger)

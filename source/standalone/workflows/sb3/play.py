@@ -20,6 +20,7 @@ parser.add_argument(
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint.")
+parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
 parser.add_argument(
     "--use_last_checkpoint",
     action="store_true",
@@ -41,7 +42,7 @@ import numpy as np
 import os
 import torch
 
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.vec_env import VecNormalize
 
 import omni.isaac.lab_tasks  # noqa: F401
@@ -55,8 +56,10 @@ def main():
     env_cfg = parse_env_cfg(
         args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
-    agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_cfg_entry_point")
-    # post-process agent configuration
+    if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
+    else:
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_ppo_cfg_entry_point")    # post-process agent configuration
     agent_cfg = process_sb3_cfg(agent_cfg)
 
     # create isaac environment
@@ -90,7 +93,10 @@ def main():
         checkpoint_path = args_cli.checkpoint
     # create agent from stable baselines
     print(f"Loading checkpoint from: {checkpoint_path}")
-    agent = PPO.load(checkpoint_path, env, print_system_info=True)
+    if args_cli.algo == 'SAC':
+        agent = SAC.load(checkpoint_path, env, print_system_info=True)
+    else:
+        agent = PPO.load(checkpoint_path, env, print_system_info=True)
 
     # reset environment
     obs = env.reset()
