@@ -142,16 +142,6 @@ class CartpoleDecoupledEnv(DirectRLEnv):
     def step(self, action: torch.Tensor):
         """ Overridden step method; used for applying decoupled physics """
 
-        import onnxruntime as ort
-        infs = ort.InferenceSession('/home/dev10/Documents/repos/cartpole_beckhoff/artifacts/cartpole_beckhoff_swingup_working.onnx')
-        if not hasattr(self, 'obs_buf'):
-            obs = self._get_observations()
-        else:
-            obs = self.obs_buf
-        np_obs = obs['policy'].cpu().numpy()
-        in2 = {infs.get_inputs()[0].name: np_obs}
-        action = infs.run(None, in2)[0]
-        action = torch.tensor(action, device=self.device)
         # add action noise
         if self.cfg.action_noise_model:
             action = self._action_noise_model.apply(action.clone())
