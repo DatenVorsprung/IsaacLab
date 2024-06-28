@@ -30,6 +30,7 @@ from .allegro import *
 from .ant import *
 from .anymal import *
 from .cartpole import *
+from .cartpole_decoupled import *
 from .franka import *
 from .humanoid import *
 from .kinova import *
