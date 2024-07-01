@@ -1,0 +1,17 @@
+# Domain Randomization for the Cartpole Decoupled Model
+
+custom_domain_randomization:
+  randomize: True
+  randomization_parameters:
+    cart_mass:
+      bounds: [ 0.8, 1.2 ]
+    pole_len:
+      bounds: [ 0.8, 1.2 ]
+    pole_mass:
+      bounds: [ 0.8, 1.2 ]
+    pole_friction:
+      bounds: [ 0.8, 1.2 ]
+    moment_of_inertia:
+      bounds: [ 0.8, 1.2 ]
+    gravity:
+      bounds: [ 0.8, 1.2 ]
