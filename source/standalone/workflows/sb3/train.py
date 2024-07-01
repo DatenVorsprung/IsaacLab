@@ -30,6 +30,8 @@ parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
 parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
+parser.add_argument('--eval-env', type=str, default=None, help='Name of the environment to evaluate the model')
+
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -50,7 +52,7 @@ import os
 from datetime import datetime
 
 from stable_baselines3 import PPO, SAC
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import VecNormalize
 
@@ -135,9 +137,18 @@ def main():
     agent.set_logger(new_logger)
 
     # callbacks for agent
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+    if args_cli.eval_env is not None:
+        try:
+            eval_env = gym.make(args_cli.eval_env, max_episode_steps=1000)
+            callback = EvalCallback(eval_env, best_model_save_path=log_dir, log_path=log_dir,
+                                    eval_freq=10_000 / args_cli.num_envs, n_eval_episodes=1, render=False,
+                                    deterministic=True, verbose=1)
+        except:
+            print('Could not create evaluation environment. Use checkpoint callback instead')
+            callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+
     # train the agent
-    agent.learn(total_timesteps=n_timesteps, callback=checkpoint_callback)
+    agent.learn(total_timesteps=n_timesteps, callback=callback)
     # save the final model
     agent.save(os.path.join(log_dir, "model"))
 
