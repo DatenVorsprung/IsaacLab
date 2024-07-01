@@ -2,7 +2,7 @@
 
 custom_domain_randomization:
   randomize: False
-  randomization_parameters:
+  attributes:
     cart_mass:
       bounds: [ 0.8, 1.2 ]
     pole_len:
