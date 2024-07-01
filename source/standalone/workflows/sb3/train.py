@@ -75,14 +75,13 @@ def main():
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
     else:
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_ppo_cfg_entry_point")
+        # max iterations for training
+        if args_cli.max_iterations:
+            agent_cfg["n_timesteps"] = args_cli.max_iterations * agent_cfg["n_steps"] * env_cfg.scene.num_envs
 
     # override configuration with command line arguments
     if args_cli.seed is not None:
         agent_cfg["seed"] = args_cli.seed
-
-    # max iterations for training
-    if args_cli.max_iterations:
-        agent_cfg["n_timesteps"] = args_cli.max_iterations * agent_cfg["n_steps"] * env_cfg.scene.num_envs
 
     # directory for logging into
     log_dir = os.path.join("logs", "sb3", args_cli.task, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
