@@ -1,7 +1,7 @@
 # Domain Randomization for the Cartpole Decoupled Model
 
 custom_domain_randomization:
-  randomize: True
+  randomize: False
   randomization_parameters:
     cart_mass:
       bounds: [ 0.8, 1.2 ]
