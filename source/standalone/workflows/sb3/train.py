@@ -73,6 +73,9 @@ def main():
 
     if args_cli.algo == 'SAC':
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
+        # when using SAC, max_ierations corresponds to the total number of timesteps
+        if args_cli.max_iterations:
+            agent_cfg["n_timesteps"] = args_cli.max_iterations
     else:
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_ppo_cfg_entry_point")
         # max iterations for training
