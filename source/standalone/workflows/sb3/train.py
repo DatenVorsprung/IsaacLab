@@ -145,6 +145,8 @@ def main():
         except:
             print('Could not create evaluation environment. Use checkpoint callback instead')
             callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+    else:
+        callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
 
     # train the agent
     agent.learn(total_timesteps=n_timesteps, callback=callback)
