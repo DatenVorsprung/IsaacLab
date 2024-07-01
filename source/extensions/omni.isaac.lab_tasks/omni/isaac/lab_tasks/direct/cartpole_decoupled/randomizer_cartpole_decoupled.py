@@ -13,6 +13,7 @@ class CartPoleDecoupledRandomizer:
             dr_cfg = yaml.full_load(f)
 
         self.dr_cfg = dr_cfg
+        self.custom_randomize = False
         if self.dr_cfg is not None:
             if 'randomize' in self.dr_cfg['custom_domain_randomization']:
                 if self.dr_cfg['custom_domain_randomization']['randomize']:
