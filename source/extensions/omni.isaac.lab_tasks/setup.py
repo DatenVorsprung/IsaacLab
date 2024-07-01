@@ -32,6 +32,8 @@ INSTALL_REQUIRES = [
     "tensorboard",
     # video recording
     "moviepy",
+    # decoupled cartpole environment
+    "torchdiffeq"
 ]
 
 PYTORCH_INDEX_URL = ["https://download.pytorch.org/whl/cu118"]
