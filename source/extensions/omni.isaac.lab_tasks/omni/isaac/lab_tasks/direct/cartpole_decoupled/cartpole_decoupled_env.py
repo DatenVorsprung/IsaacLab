@@ -22,6 +22,8 @@ from omni.isaac.lab.sim.spawners.from_files import GroundPlaneCfg, spawn_ground_
 from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.utils.math import sample_uniform
 
+from omni.isaac.lab_tasks.direct.cartpole_decoupled.randomizer_cartpole_decoupled import CartPoleDecoupledRandomizer
+
 
 @configclass
 class CartpoleDecoupledSimConfig(SimulationCfg):
@@ -75,15 +77,21 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         self.joint_pos = self.cartpole.data.joint_pos
         self.joint_vel = self.cartpole.data.joint_vel
         self.state_buf = None
-        self.cart_mass = 0.46
-        self.pole_len = 0.41
-        self.pole_mass = 0.08
-        self.pole_friction = 2.1e-3
-        self.moment_of_inertia = 0.0105
-        self.gravity = 9.81
+        self.cart_mass = 0.46 * torch.ones(self.num_envs, device=self.device)
+        self.pole_len = 0.41 * torch.ones(self.num_envs, device=self.device)
+        self.pole_mass = 0.08 * torch.ones(self.num_envs, device=self.device)
+        self.pole_friction = 2.1e-3 * torch.ones(self.num_envs, device=self.device)
+        self.moment_of_inertia = 0.0105 * torch.ones(self.num_envs, device=self.device)
+        self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
+
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
         self.action_space.is_bounded()
+
+        self._custom_randomizer = CartPoleDecoupledRandomizer()
+
+        if self._custom_randomizer.custom_randomize:
+            self._custom_randomizer.randomizer(self)
 
 
     def cartpole_decoupled_dynamics(self, t, state, action):
