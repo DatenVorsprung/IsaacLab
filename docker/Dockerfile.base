@@ -47,7 +47,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
     rm -rf /var/lib/apt/lists/*
 
 # Install vim for editing files inside container
-RUN apt-get install -y vim
+RUN apt-get update && apt-get install -y vim && \
+    apt -y autoremove && apt clean autoclean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the Isaac Lab directory (files to exclude are defined in .dockerignore)
 COPY ../ ${ISAACLAB_PATH}
