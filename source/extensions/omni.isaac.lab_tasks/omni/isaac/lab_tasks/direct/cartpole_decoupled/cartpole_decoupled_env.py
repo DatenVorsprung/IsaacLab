@@ -90,8 +90,8 @@ class CartpoleDecoupledEnv(DirectRLEnv):
 
         self._custom_randomizer = CartPoleDecoupledRandomizer()
 
-        if self._custom_randomizer.custom_randomize:
-            self._custom_randomizer.randomizer(self)
+        if self._custom_randomizer.attribute_randomize:
+            self._custom_randomizer.attribute_randomizer(self)
 
 
     def cartpole_decoupled_dynamics(self, t, state, action):
