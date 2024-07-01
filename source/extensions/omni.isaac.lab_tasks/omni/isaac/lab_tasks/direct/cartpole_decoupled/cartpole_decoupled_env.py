@@ -9,6 +9,7 @@ import math
 import torch
 from torchdiffeq import odeint
 from collections.abc import Sequence
+import gymnasium as gym
 
 from omni.isaac.lab_assets.cartpole_decoupled import CARTPOLE_DECOUPLED_CFG
 
@@ -80,6 +81,10 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         self.pole_friction = 2.1e-3
         self.moment_of_inertia = 0.0105
         self.gravity = 9.81
+        self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
+        self.action_space.is_bounded()
+
 
     def cartpole_decoupled_dynamics(self, t, state, action):
         """ Dynamics equations of decoupled cartpole system """
