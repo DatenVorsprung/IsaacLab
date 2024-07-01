@@ -15,3 +15,11 @@ custom_domain_randomization:
       bounds: [ 0.8, 1.2 ]
     gravity:
       bounds: [ 0.8, 1.2 ]
+  action:
+    operation: 'additive'
+    distribution: 'uniform'
+    distribution_params: [ -0.05, 0.05 ]
+  observation:
+    operation: 'scaling'
+    distribution: 'gaussian'
+    distribution_params: [ 1.0, 0.5]
