@@ -1,25 +1,47 @@
-# Domain Randomization for the Cartpole Decoupled Model
+# Custom Domain Randomization for the Cartpole Decoupled Model
+
+# Skeleton to randomize an attribute, the action, or the observation
+# to_be_randomized:
+#   operation: 'additive' or 'scaling'
+#   distribution: 'uniform' or 'gaussian'
+#   distribution_params: [value1, value2]
+#   if distribution = 'uniform': value1 = lower bound of support and value2 = higher bound of support
+#   in this case, make sure value2 > value1
+#   if distribution = 'gaussian': value1 = mean and value2 = standard deviation
+#   in this case, make sure value2 > 0.0
 
 custom_domain_randomization:
   randomize: True
   attributes:
     cart_mass:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
     pole_len:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
     pole_mass:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
     pole_friction:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
     moment_of_inertia:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
     gravity:
-      bounds: [ 0.8, 1.2 ]
+      operation: 'scaling'
+      distribution: 'uniform'
+      distribution_params: [ 0.95, 1.05 ]
   action:
-    operation: 'scaling'
+    operation: 'additive'
     distribution: 'gaussian'
-    distribution_params: [ 1.0, 0.5 ]
+    distribution_params: [ 0.95, 1.05 ]
   observation:
     operation: 'scaling'
     distribution: 'uniform'
-    distribution_params: [ 1.0, 1.0]
+    distribution_params: [ 0.0, 0.001 ]
