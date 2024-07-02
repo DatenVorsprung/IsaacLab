@@ -17,7 +17,8 @@ The following example shows how to wrap an environment for Stable-Baselines3:
 
 # needed to import for allowing type-hinting: torch.Tensor | dict[str, torch.Tensor]
 from __future__ import annotations
-
+import csv
+from pathlib import Path
 import gymnasium as gym
 import numpy as np
 import torch
@@ -26,6 +27,7 @@ from typing import Any
 
 from stable_baselines3.common.utils import constant_fn
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn
+from stable_baselines3.common.callbacks import BaseCallback
 
 from omni.isaac.lab.envs import DirectRLEnv, ManagerBasedRLEnv
 
@@ -341,3 +343,27 @@ class Sb3VecEnvWrapper(VecEnv):
                 infos[idx]["terminal_observation"] = None
         # return list of dictionaries
         return infos
+
+
+class CurrentBestRewardCallback(BaseCallback):
+    """ Log the current best reward and the current timestep """
+
+    def __init__(self, log_dir, save_freq):
+        super(CurrentBestRewardCallback, self).__init__()
+        self.log_dir = log_dir
+        self.save_freq = save_freq
+        self.best_reward = -np.inf
+        self.current_timestep = 0
+        self.log_file_path = Path(log_dir) / "rewards.csv"
+
+    def _on_step(self):
+        if self.n_calls % self.save_freq == 0:
+            current_reward = self.model.rewards[-1]
+            current_timestep = self.num_timesteps
+            if current_reward > self.best_reward:
+                self.best_reward = current_reward
+                # write best reward and timestep to file
+                with open(self.log_file_path, 'wa') as csv_file:
+                    csv_writer = csv.writer(csv_file)
+                    csv_writer.writerow([current_timestep, current_reward])
+        return True
