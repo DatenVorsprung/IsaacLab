@@ -54,7 +54,7 @@ from datetime import datetime
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env import VecFrameStack, VecNormalize
 
 from omni.isaac.lab.utils.dict import print_dict
 from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
@@ -118,6 +118,9 @@ def main():
     # set the seed
     env.seed(seed=agent_cfg["seed"])
 
+    if "frame_stack" in agent_cfg:
+        env = VecFrameStack(env, agent_cfg.pop("frame_stack"), channels_order="first")
+
     if "normalize_input" in agent_cfg:
         env = VecNormalize(
             env,
@@ -125,13 +128,15 @@ def main():
             norm_obs="normalize_input" in agent_cfg and agent_cfg.pop("normalize_input"),
             norm_reward="normalize_value" in agent_cfg and agent_cfg.pop("normalize_value"),
             clip_obs="clip_obs" in agent_cfg and agent_cfg.pop("clip_obs"),
-            gamma=agent_cfg["gamma"],
+            gamma=0.99,
             clip_reward=np.inf,
         )
 
+
+
     # create agent from stable baselines
     if args_cli.algo == 'SAC':
-        agent = SAC(policy_arch, env, verbose=1, **agent_cfg)
+        agent = SAC(policy_arch, env, verbose=1, **agent_cfg, policy_kwargs={'normalize_images': False})
     else:
         agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
     # configure the logger
