@@ -1,7 +1,7 @@
 # Domain Randomization for the Cartpole Decoupled Model
 
 custom_domain_randomization:
-  randomize: False
+  randomize: True
   attributes:
     cart_mass:
       bounds: [ 0.8, 1.2 ]
@@ -16,10 +16,10 @@ custom_domain_randomization:
     gravity:
       bounds: [ 0.8, 1.2 ]
   action:
-    operation: 'additive'
-    distribution: 'uniform'
-    distribution_params: [ -0.05, 0.05 ]
-  observation:
     operation: 'scaling'
     distribution: 'gaussian'
-    distribution_params: [ 1.0, 0.5]
+    distribution_params: [ 1.0, 0.5 ]
+  observation:
+    operation: 'scaling'
+    distribution: 'uniform'
+    distribution_params: [ 1.0, 1.0]
