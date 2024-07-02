@@ -93,7 +93,6 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         if self._custom_randomizer.attribute_randomize:
             self._custom_randomizer.attribute_randomizer(self)
 
-
     def cartpole_decoupled_dynamics(self, t, state, action):
         """ Dynamics equations of decoupled cartpole system """
 
@@ -156,8 +155,8 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         """ Overridden step method; used for applying decoupled physics """
 
         # add action noise
-        if self.cfg.action_noise_model:
-            action = self._action_noise_model.apply(action.clone())
+        if self._custom_randomizer.action_randomize:
+            action = self._custom_randomizer.action_randomizer(self, action.clone())
 
         # store actions and current state in buffer
         self._pre_physics_step(action)
@@ -213,8 +212,8 @@ class CartpoleDecoupledEnv(DirectRLEnv):
 
         # add observation noise
         # note: we apply no noise to the state space (since it is used for critic networks)
-        if self.cfg.observation_noise_model:
-            self.obs_buf["policy"] = self._observation_noise_model.apply(self.obs_buf["policy"])
+        if self._custom_randomizer.observation_randomize:
+            self.obs_buf["policy"] = self._custom_randomizer.observation_randomizer(self, self.obs_buf["policy"])
 
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
