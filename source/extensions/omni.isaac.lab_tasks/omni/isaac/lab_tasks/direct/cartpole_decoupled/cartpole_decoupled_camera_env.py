@@ -9,6 +9,7 @@ import gymnasium as gym
 import math
 import numpy as np
 import torch
+import torchvision.transforms
 from torchdiffeq import odeint
 from collections.abc import Sequence
 
@@ -18,7 +19,7 @@ import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import Articulation, ArticulationCfg
 from omni.isaac.lab.envs import DirectRLEnv, DirectRLEnvCfg, ViewerCfg
 from omni.isaac.lab.scene import InteractiveSceneCfg
-from omni.isaac.lab.sensors import TiledCamera, TiledCameraCfg, save_images_to_file
+from omni.isaac.lab.sensors import TiledCamera, TiledCameraCfg, save_images_to_file, Camera, CameraCfg
 from omni.isaac.lab.sim import SimulationCfg
 from omni.isaac.lab.sim.spawners.from_files import GroundPlaneCfg, spawn_ground_plane
 from omni.isaac.lab.utils import configclass
@@ -59,15 +60,15 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     pole_dof_name = "cart_to_pole"
 
     # camera
-    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+    tiled_camera: CameraCfg = CameraCfg(
         prim_path="/World/envs/env_.*/Camera",
-        offset=TiledCameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
+        offset=CameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1e5)
         ),
-        width=80,
-        height=80,
+        width=100,
+        height=75,
     )
     num_observations = num_channels * tiled_camera.height * tiled_camera.width
     write_image_to_file = False
@@ -99,6 +100,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.joint_vel = self.cartpole.data.joint_vel
 
         self.state_buf = None
+        self.obs_buf = None
         self.cart_mass = 0.46 * torch.ones(self.num_envs, device=self.device)
         self.pole_len = 0.41 * torch.ones(self.num_envs, device=self.device)
         self.pole_mass = 0.08 * torch.ones(self.num_envs, device=self.device)
@@ -146,15 +148,17 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         # set up spaces
         self.single_observation_space = gym.spaces.Dict()
         self.single_observation_space["policy"] = gym.spaces.Box(
-            low=-np.inf,
-            high=np.inf,
-            shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.num_channels),
+            low=0.,
+            high=1.,
+            shape=(self.cfg.num_channels, self.cfg.tiled_camera.height,
+                   self.cfg.tiled_camera.width),
         )
         if self.num_states > 0:
             self.single_observation_space["critic"] = gym.spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.num_channels),
+                low=0.,
+                high=1.,
+                shape=(self.cfg.num_channels, self.cfg.tiled_camera.height,
+                       self.cfg.tiled_camera.width),
             )
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.num_actions,))
 
@@ -168,7 +172,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     def _setup_scene(self):
         """Setup the scene with the cartpole and camera."""
         self.cartpole = Articulation(self.cfg.robot_cfg)
-        self._tiled_camera = TiledCamera(self.cfg.tiled_camera)
+        self._tiled_camera = Camera(self.cfg.tiled_camera)
         # add ground plane
         spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg(size=(500, 500)))
         # clone, filter, and replicate
@@ -267,13 +271,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.cartpole.set_joint_effort_target(self.actions, joint_ids=self._cart_dof_idx)
 
     def _get_observations(self) -> dict:
-        data_type = "rgb" if "rgb" in self.cfg.tiled_camera.data_types else "depth"
-        observations = {"policy": self._tiled_camera.data.output[data_type].clone()}
-
-        if self.cfg.write_image_to_file:
-            save_images_to_file(observations["policy"], f"cartpole_{data_type}.png")
-
-        return observations
+        img = self._tiled_camera.data.output['rgb'].clone()
+        img = img.permute(0, 3, 1, 2)[:, :3, :, :].float() / 255.0
+        return {'policy': img}
 
     def _get_rewards(self) -> torch.Tensor:
         # reward for keeping the pole upright, the cart in the middle, and the system alive
