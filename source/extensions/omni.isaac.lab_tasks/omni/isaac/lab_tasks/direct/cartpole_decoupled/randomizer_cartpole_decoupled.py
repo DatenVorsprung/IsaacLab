@@ -29,7 +29,7 @@ class CartPoleDecoupledRandomizer:
                         self.observation_randomize = True
                         self.observation_params = self.dr_cfg['custom_domain_randomization']['observation']
                 else:
-                    print("Custom randomization is set to 'False'.")
+                    print("Custom randomization is set to False.")
             else:
                 print("Please specify if you would like to randomize.")
         else:
@@ -41,7 +41,7 @@ class CartPoleDecoupledRandomizer:
 
         custom_attributes = ['cart_mass', 'pole_len', 'pole_mass', 'pole_friction', 'moment_of_inertia', 'gravity']
 
-        if self.custom_randomize:
+        if self.attribute_randomize:
             if self.attribute_params is not None:
                 for attr in self.attribute_params:
                     if attr not in custom_attributes:
@@ -99,12 +99,42 @@ class CartPoleDecoupledRandomizer:
 
         return
 
-    def action_randomizer(self, action):
+    def action_randomizer(self, task, action):
+
+        custom_distributions = ['uniform', 'gaussian']
+        custom_operations = ['additive', 'scaling']
+
         if self.action_randomize:
-            print('Hello World')
-        else:
-            print('Bye World')
-        return
+            if not set(('operation', 'distribution', 'distribution_params')).issubset(self.action_params.keys()):
+                print('Please provide all ingredients for randomizing the action: operation, distribution, distribution_params.')
+            else:
+                if not self.action_params['distribution'] in custom_distributions:
+                    print('Please select one of the two distributions: uniform, gaussian.')
+                else:
+                    if self.action_params['distribution'] == 'uniform':
+                        low = self.action_params['distribution_params'][0]
+                        high = self.action_params['distribution_params'][1]
+                        action_noise = ((low - high) * torch.rand(size=action.shape, device=task.device) + high)
+                        if not self.action_params['operation'] in custom_operations:
+                            print('Please select one of the two operations: additive, scaling.')
+                        else:
+                            if self.action_params['operation'] == 'additive':
+                                action += action_noise
+                            if self.action_params['operation'] == 'scaling':
+                                action *= action_noise
+
+                    if self.action_params['distribution'] == 'gaussian':
+                        mean = self.action_params['distribution_params'][0]
+                        sd = self.action_params['distribution_params'][1]
+                        action_noise = torch.normal(mean=(mean * torch.ones(size=action.shape, device=task.device)), std=(sd * torch.ones(size=action.shape, device=task.device)))
+                        if not self.action_params['operation'] in custom_operations:
+                            print('Please select one of the two operations: additive, scaling.')
+                        else:
+                            if self.action_params['operation'] == 'additive':
+                                action += action_noise
+                            if self.action_params['operation'] == 'scaling':
+                                action *= action_noise
+        return action
 
     def observation_randomizer(self, observation):
         if self.action_randomize:
