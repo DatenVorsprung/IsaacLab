@@ -43,7 +43,7 @@ import os
 import torch
 
 from stable_baselines3 import PPO, SAC
-from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env import VecNormalize, VecFrameStack
 
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils.parse_cfg import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
@@ -66,6 +66,9 @@ def main():
     env = gym.make(args_cli.task, cfg=env_cfg)
     # wrap around environment for stable baselines
     env = Sb3VecEnvWrapper(env)
+
+    if "frame_stack" in agent_cfg:
+        env = VecFrameStack(env, agent_cfg.pop("frame_stack"), channels_order="first")
 
     # normalize environment (if needed)
     if "normalize_input" in agent_cfg:
