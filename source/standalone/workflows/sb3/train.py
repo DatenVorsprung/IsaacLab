@@ -146,16 +146,19 @@ def main():
         try:
             eval_env = gym.make(args_cli.eval_env, max_episode_steps=1000)
             callback = EvalCallback(eval_env, best_model_save_path=log_dir, log_path=log_dir,
-                                    eval_freq=10_000 / args_cli.num_envs, n_eval_episodes=1, render=False,
+                                    eval_freq=10_000 // args_cli.num_envs, n_eval_episodes=1, render=False,
                                     deterministic=True, verbose=1)
         except:
             print('Could not create evaluation environment. Use checkpoint callback instead')
-            callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+            callback = CheckpointCallback(save_freq=1000 // args_cli.num_envs, save_path=log_dir,
+                                          name_prefix="model", verbose=2)
     else:
-        callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+        callback = CheckpointCallback(save_freq=1000 // args_cli.num_envs, save_path=log_dir,
+                                      name_prefix="model", verbose=2)
 
     # use CurrentBestRewardCallback to track the reward progression over time
-    reward_estimate_callback = RewardEstimateCallback(log_dir, save_freq=10, env_idx=0)
+    reward_estimate_callback = RewardEstimateCallback(log_dir, save_freq=10, env_idx=0,
+                                                      num_envs=args_cli.num_envs)
 
     # train the agent
     agent.learn(total_timesteps=n_timesteps, callback=[callback, reward_estimate_callback])

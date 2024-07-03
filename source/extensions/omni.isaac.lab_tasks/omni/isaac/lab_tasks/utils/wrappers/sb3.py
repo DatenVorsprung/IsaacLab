@@ -348,11 +348,12 @@ class Sb3VecEnvWrapper(VecEnv):
 class RewardEstimateCallback(BaseCallback):
     """ Log the total reward of a selected episode to a csv file """
 
-    def __init__(self, log_dir, save_freq, env_idx):
+    def __init__(self, log_dir, save_freq, env_idx, num_envs):
         super(RewardEstimateCallback, self).__init__()
         self.log_dir = log_dir
         self.save_freq = save_freq
         self.env_idx = env_idx
+        self.num_envs = num_envs
         self.current_episode = 0
         self.current_timestep = 0
         self.total_reward = 0.
@@ -365,7 +366,7 @@ class RewardEstimateCallback(BaseCallback):
 
         # update the total reward and the timestep
         self.total_reward += self.locals['rewards'][self.env_idx].item()
-        self.current_timestep += 1
+        self.current_timestep += self.num_envs
 
         # if the environment terminates
         if self.locals['dones'][self.env_idx]:
