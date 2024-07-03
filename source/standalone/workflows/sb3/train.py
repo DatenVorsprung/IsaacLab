@@ -61,7 +61,7 @@ from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
 
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import load_cfg_from_registry, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.sb3 import Sb3VecEnvWrapper, process_sb3_cfg, CurrentBestRewardCallback
+from omni.isaac.lab_tasks.utils.wrappers.sb3 import Sb3VecEnvWrapper, process_sb3_cfg, RewardEstimateCallback
 
 
 def main():
@@ -155,10 +155,10 @@ def main():
         callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
 
     # use CurrentBestRewardCallback to track the reward progression over time
-    best_reward_callback = CurrentBestRewardCallback(log_dir, save_freq=10 / args_cli.num_envs)
+    reward_estimate_callback = RewardEstimateCallback(log_dir, save_freq=10, env_idx=0)
 
     # train the agent
-    agent.learn(total_timesteps=n_timesteps, callback=[callback, best_reward_callback])
+    agent.learn(total_timesteps=n_timesteps, callback=[callback, reward_estimate_callback])
     # save the final model
     agent.save(os.path.join(log_dir, "model"))
 

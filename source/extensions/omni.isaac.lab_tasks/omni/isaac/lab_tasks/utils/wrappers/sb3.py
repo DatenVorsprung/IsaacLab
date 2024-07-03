@@ -345,25 +345,40 @@ class Sb3VecEnvWrapper(VecEnv):
         return infos
 
 
-class CurrentBestRewardCallback(BaseCallback):
-    """ Log the current best reward and the current timestep """
+class RewardEstimateCallback(BaseCallback):
+    """ Log the total reward of a selected episode to a csv file """
 
-    def __init__(self, log_dir, save_freq):
-        super(CurrentBestRewardCallback, self).__init__()
+    def __init__(self, log_dir, save_freq, env_idx):
+        super(RewardEstimateCallback, self).__init__()
         self.log_dir = log_dir
         self.save_freq = save_freq
-        self.best_reward = -np.inf
+        self.env_idx = env_idx
+        self.current_episode = 0
         self.current_timestep = 0
+        self.total_reward = 0.
         self.log_file_path = Path(log_dir) / "rewards.csv"
 
     def _on_step(self):
-        if self.n_calls % self.save_freq == 0:
-            current_reward = self.model.rewards[-1]
-            current_timestep = self.num_timesteps
-            if current_reward > self.best_reward:
-                self.best_reward = current_reward
-                # write best reward and timestep to file
-                with open(self.log_file_path, 'wa') as csv_file:
+        """ After each step, get the current reward of the selected idx and add it to the
+            total reward. After save_freq episodes, log the total reward to a csv file
+        """
+
+        # update the total reward and the timestep
+        self.total_reward += self.locals['rewards'][self.env_idx].item()
+        self.current_timestep += 1
+
+        # if the environment terminates
+        if self.locals['dones'][self.env_idx]:
+
+            # if the finished episode was a multiple of save_freq -> log
+            if self.current_episode % self.save_freq == 0:
+                with open(self.log_file_path, 'a') as csv_file:
                     csv_writer = csv.writer(csv_file)
-                    csv_writer.writerow([current_timestep, current_reward])
+                    csv_writer.writerow([self.current_timestep, self.total_reward])
+
+            # increment number of episodes
+            self.current_episode += 1
+            # reset total_reward
+            self.total_reward = 0
+
         return True
