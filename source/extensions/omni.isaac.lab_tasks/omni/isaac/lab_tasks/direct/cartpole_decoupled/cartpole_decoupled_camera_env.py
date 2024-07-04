@@ -273,6 +273,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     def _get_observations(self) -> dict:
         img = self._tiled_camera.data.output['rgb'].clone()
         img = img.permute(0, 3, 1, 2)[:, :3, :, :].float() / 255.0
+        img = torchvision.transforms.Normalize(mean=[0.7375, 0.7304, 0.7162], std=[0.1699, 0.1705, 0.1707])(img)
         return {'policy': img}
 
     def _get_rewards(self) -> torch.Tensor:

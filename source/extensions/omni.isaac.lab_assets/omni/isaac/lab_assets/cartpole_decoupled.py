@@ -14,7 +14,7 @@ from omni.isaac.lab.assets import ArticulationCfg
 # Configuration
 ##
 
-USD_PATH = str(Path(__file__).parent / "usd_files/cartpole_with_background.usd")
+USD_PATH = str(Path(__file__).parent / "usd_files/cartpole_with_background_painted.usd")
 
 
 CARTPOLE_DECOUPLED_CFG = ArticulationCfg(
