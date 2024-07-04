@@ -310,11 +310,6 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         joint_vel[:, self._cart_dof_idx] += sample_uniform(-0.05, 0.05, joint_vel[:, self._cart_dof_idx].shape, joint_vel.device)
         joint_vel[:, self._pole_dof_idx] += sample_uniform(-0.05, 0.05, joint_vel[:, self._cart_dof_idx].shape, joint_vel.device)
 
-        joint_pos = self.cartpole.data.default_joint_pos[env_ids]
-        joint_vel = self.cartpole.data.default_joint_vel[env_ids]
-        joint_pos[:, self._pole_dof_idx] += torch.pi
-
-
         self.joint_pos[env_ids] = joint_pos
         self.joint_vel[env_ids] = joint_vel
         self.cartpole.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
