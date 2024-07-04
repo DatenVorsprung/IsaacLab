@@ -5,4 +5,4 @@ n_timesteps: !!float 1e6
 policy: 'CnnPolicy'
 device: "cuda:0"
 buffer_size: !!int 10_000
-frame_stack: 5
+frame_stack: 3
