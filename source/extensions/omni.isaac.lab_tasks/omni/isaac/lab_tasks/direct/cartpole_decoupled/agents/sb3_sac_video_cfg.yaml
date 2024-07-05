@@ -4,6 +4,10 @@ seed: 22
 n_timesteps: !!float 3e6
 policy: 'CnnPolicy'
 device: "cuda:0"
-buffer_size: !!int 1_000_000
-frame_stack: 5
-batch_size: 4096
+buffer_size: !!int 300_000
+frame_stack: 4
+policy_kwargs: "dict(
+                  normalize_images=False,
+                  share_features_extractor=True
+                )"
+batch_size: 1024
