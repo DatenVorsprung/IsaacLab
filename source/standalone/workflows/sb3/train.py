@@ -134,7 +134,7 @@ def main():
 
     # create agent from stable baselines
     if args_cli.algo == 'SAC':
-        agent = SAC(policy_arch, env, verbose=1, **agent_cfg, policy_kwargs={'normalize_images': False})
+        agent = SAC(policy_arch, env, verbose=1, **agent_cfg, policy_kwargs={'normalize_images': False, 'share_features_extractor': True})
     else:
         agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
     # configure the logger

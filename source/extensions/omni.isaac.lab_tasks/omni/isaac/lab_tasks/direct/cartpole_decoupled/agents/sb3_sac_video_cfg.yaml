@@ -1,8 +1,9 @@
 # Reference: https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/hyperparams/ppo.yml#L32
-seed: 42
+seed: 22
 
-n_timesteps: !!float 1e6
+n_timesteps: !!float 3e6
 policy: 'CnnPolicy'
 device: "cuda:0"
-buffer_size: !!int 10_000
-frame_stack: 3
+buffer_size: !!int 1_000_000
+frame_stack: 5
+batch_size: 4096
