@@ -150,10 +150,10 @@ def main():
                                     deterministic=True, verbose=1)
         except:
             print('Could not create evaluation environment. Use checkpoint callback instead')
-            callback = CheckpointCallback(save_freq=1000 // args_cli.num_envs, save_path=log_dir,
+            callback = CheckpointCallback(save_freq=10_000 // args_cli.num_envs, save_path=log_dir,
                                           name_prefix="model", verbose=2)
     else:
-        callback = CheckpointCallback(save_freq=1000 // args_cli.num_envs, save_path=log_dir,
+        callback = CheckpointCallback(save_freq=10_000 // args_cli.num_envs, save_path=log_dir,
                                       name_prefix="model", verbose=2)
 
     # use CurrentBestRewardCallback to track the reward progression over time
