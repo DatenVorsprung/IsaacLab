@@ -33,7 +33,8 @@ INSTALL_REQUIRES = [
     # video recording
     "moviepy",
     # decoupled cartpole environment
-    "torchdiffeq"
+    "torchdiffeq",
+    "onnxruntime"
 ]
 
 PYTORCH_INDEX_URL = ["https://download.pytorch.org/whl/cu118"]
