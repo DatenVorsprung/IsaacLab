@@ -29,7 +29,8 @@ parser.add_argument("--num_envs", type=int, default=None, help="Number of enviro
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
-parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
+parser.add_argument('--algo', type=str, choices=['PPO', 'SAC', 'JSSAC'])
+parser.add_argument('--guide-policy', type=str, help='Path to the guide policy checkpoint')
 parser.add_argument('--eval-env', type=str, default=None, help='Name of the environment to evaluate the model')
 
 # append AppLauncher cli args
@@ -51,7 +52,7 @@ import numpy as np
 import os
 from datetime import datetime
 
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import PPO, SAC, JSSAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import VecFrameStack, VecNormalize
@@ -72,6 +73,11 @@ def main():
     )
 
     if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
+        # when using SAC, max_ierations corresponds to the total number of timesteps
+        if args_cli.max_iterations:
+            agent_cfg["n_timesteps"] = args_cli.max_iterations
+    elif args_cli.algo == 'JSSAC':
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
         # when using SAC, max_ierations corresponds to the total number of timesteps
         if args_cli.max_iterations:
@@ -135,6 +141,8 @@ def main():
     # create agent from stable baselines
     if args_cli.algo == 'SAC':
         agent = SAC(policy_arch, env, verbose=1, **agent_cfg)
+    elif args_cli.algo == 'JSSAC':
+        agent = JSSAC(policy_arch, env, args_cli.guide_policy, 5, 20, 0.95, sac_kwargs=agent_cfg, verbose=1)
     else:
         agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
     # configure the logger
