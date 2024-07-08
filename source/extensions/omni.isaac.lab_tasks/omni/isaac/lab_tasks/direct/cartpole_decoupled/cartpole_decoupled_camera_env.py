@@ -111,6 +111,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.moment_of_inertia = 0.0105 * torch.ones(self.num_envs, device=self.device)
         self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
         self.max_accel = self.cfg.max_accel
+        self.time_steps = torch.zeros(self.num_envs, device=self.device)
 
         self._custom_randomizer = CartPoleDecoupledRandomizer()
 
@@ -265,6 +266,8 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         if self.cfg.observation_noise_model:
             self.obs_buf["policy"] = self._observation_noise_model.apply(self.obs_buf["policy"])
 
+        self.time_steps += 1
+
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
@@ -313,6 +316,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.joint_pos[env_ids] = joint_pos
         self.joint_vel[env_ids] = joint_vel
         self.cartpole.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
+        reset_time_steps = torch.ones(self.num_envs, device=self.device)
+        reset_time_steps[env_ids] = 0.
+        self.time_steps = self.time_steps * reset_time_steps
 
 
 @torch.jit.script
