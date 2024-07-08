@@ -202,6 +202,19 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         )
         self.state_buf = states
 
+    def get_sin_cos_state(self):
+        state = torch.cat(
+            (
+                self.joint_pos[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
+                self.joint_vel[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
+                torch.sin(self.joint_pos[:, self._pole_dof_idx[0]].unsqueeze(dim=1)),
+                torch.cos(self.joint_pos[:, self._pole_dof_idx[0]].unsqueeze(dim=1)),
+                self.joint_vel[:, self._pole_dof_idx[0]].unsqueeze(dim=1),
+            ),
+            dim=-1,
+        )
+        return state
+
     def step(self, action: torch.Tensor):
         """ Overridden step method; used for applying decoupled physics """
 
@@ -316,6 +329,17 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.joint_pos[env_ids] = joint_pos
         self.joint_vel[env_ids] = joint_vel
         self.cartpole.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
+
+        self.state_buf = torch.cat(
+            (
+                self.joint_pos[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
+                self.joint_vel[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
+                self.joint_pos[:, self._pole_dof_idx[0]].unsqueeze(dim=1),
+                self.joint_vel[:, self._pole_dof_idx[0]].unsqueeze(dim=1),
+            ),
+            dim=-1,
+        )
+
         reset_time_steps = torch.ones(self.num_envs, device=self.device)
         reset_time_steps[env_ids] = 0.
         self.time_steps = self.time_steps * reset_time_steps
