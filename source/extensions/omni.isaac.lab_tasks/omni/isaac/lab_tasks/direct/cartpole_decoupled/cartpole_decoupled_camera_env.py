@@ -202,7 +202,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         )
         self.state_buf = states
 
-    def get_sin_cos_state(self):
+    def _get_guide_model_obs(self):
         state = torch.cat(
             (
                 self.joint_pos[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
