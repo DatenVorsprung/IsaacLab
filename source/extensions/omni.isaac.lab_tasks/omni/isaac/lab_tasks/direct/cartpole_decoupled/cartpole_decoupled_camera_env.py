@@ -273,7 +273,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
     def _get_observations(self) -> dict:
         img = self._camera.data.output['rgb'].clone()
-        img = img[:, :, :, 1:2].permute(0, 3, 1, 2)
+        img = torchvision.transforms.Grayscale()(img[:, :, :, :3].permute(0, 3, 1, 2))
         img = torchvision.transforms.Resize((self.cfg.obs_img_width, self.cfg.obs_img_height), interpolation=torchvision.transforms.InterpolationMode.BICUBIC)(img) / 255.
         return {'policy': img}
 
