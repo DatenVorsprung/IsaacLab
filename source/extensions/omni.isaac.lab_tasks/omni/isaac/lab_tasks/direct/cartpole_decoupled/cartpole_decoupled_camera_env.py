@@ -85,7 +85,7 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     # reset
     # reset
     max_cart_pos = 0.35  # the cart is reset if it exceeds that position [m]
-    initial_pole_angle_range = [-1, 1]  # the range (in multiples of pi) in which the pole angle is sampled from on reset [rad]
+    initial_pole_angle_range = [-0.1, 0.1]  # the range (in multiples of pi) in which the pole angle is sampled from on reset [rad]
 
 
 class CartpoleDecoupledCameraEnv(DirectRLEnv):
@@ -315,9 +315,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         # set cart to [-0.1, 0.1]
         joint_pos[:, self._cart_dof_idx] += sample_uniform(-0.1, 0.1, joint_pos[:, self._cart_dof_idx].shape, joint_pos.device)
         # set angle to [-pi, pi]
-        joint_pos[:, self._pole_dof_idx] += sample_uniform(
-            self.cfg.initial_pole_angle_range[0] * math.pi,
-            self.cfg.initial_pole_angle_range[1] * math.pi,
+        joint_pos[:, self._pole_dof_idx] += torch.pi + sample_uniform(
+            self.cfg.initial_pole_angle_range[0],
+            self.cfg.initial_pole_angle_range[1],
             joint_pos[:, self._pole_dof_idx].shape,
             joint_pos.device,
         )
