@@ -10,7 +10,7 @@ Cartpole balancing environment with decoupled pole and cart
 import gymnasium as gym
 
 from . import agents
-from .cartpole_decoupled_camera_env import CartpoleDecoupledCameraEnv, CartpoleDecoupledDepthCameraEnvCfg, CartpoleDecoupledRGBCameraEnvCfg
+from .cartpole_decoupled_camera_env import CartpoleDecoupledCameraEnv, CartpoleDecoupledRGBCameraEnvCfg
 from .cartpole_decoupled_env import CartpoleDecoupledEnv, CartpoleDecoupledEnvCfg
 
 ##
@@ -39,15 +39,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": CartpoleDecoupledRGBCameraEnvCfg,
         "rl_games_cfg_entry_point": f"{agents.__name__}:rl_games_camera_ppo_cfg.yaml",
-    },
-)
-
-gym.register(
-    id="Isaac-CartpoleDecoupled-Depth-Camera-Direct-v0",
-    entry_point="omni.isaac.lab_tasks.direct.cartpole_decoupled:CartpoleDecoupledCameraEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": CartpoleDecoupledDepthCameraEnvCfg,
-        "rl_games_cfg_entry_point": f"{agents.__name__}:rl_games_camera_ppo_cfg.yaml",
+        "sb3_sac_cfg_entry_point": f"{agents.__name__}:sb3_sac_video_cfg.yaml",
+        "sb3_ppo_cfg_entry_point": f"{agents.__name__}:sb3_ppo_video_cfg.yaml",
     },
 )

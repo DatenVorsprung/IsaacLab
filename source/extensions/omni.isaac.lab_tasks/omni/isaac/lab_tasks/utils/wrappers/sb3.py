@@ -17,7 +17,8 @@ The following example shows how to wrap an environment for Stable-Baselines3:
 
 # needed to import for allowing type-hinting: torch.Tensor | dict[str, torch.Tensor]
 from __future__ import annotations
-
+import csv
+from pathlib import Path
 import gymnasium as gym
 import numpy as np
 import torch
@@ -26,6 +27,7 @@ from typing import Any
 
 from stable_baselines3.common.utils import constant_fn
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn
+from stable_baselines3.common.callbacks import BaseCallback
 
 from omni.isaac.lab.envs import DirectRLEnv, ManagerBasedRLEnv
 
@@ -341,3 +343,43 @@ class Sb3VecEnvWrapper(VecEnv):
                 infos[idx]["terminal_observation"] = None
         # return list of dictionaries
         return infos
+
+
+class RewardEstimateCallback(BaseCallback):
+    """ Log the total reward of a selected episode to a csv file """
+
+    def __init__(self, log_dir, save_freq, env_idx, num_envs):
+        super(RewardEstimateCallback, self).__init__()
+        self.log_dir = log_dir
+        self.save_freq = save_freq
+        self.env_idx = env_idx
+        self.num_envs = num_envs
+        self.current_episode = 0
+        self.current_timestep = 0
+        self.total_reward = 0.
+        self.log_file_path = Path(log_dir) / "rewards.csv"
+
+    def _on_step(self):
+        """ After each step, get the current reward of the selected idx and add it to the
+            total reward. After save_freq episodes, log the total reward to a csv file
+        """
+
+        # update the total reward and the timestep
+        self.total_reward += self.locals['rewards'][self.env_idx].item()
+        self.current_timestep += self.num_envs
+
+        # if the environment terminates
+        if self.locals['dones'][self.env_idx]:
+
+            # if the finished episode was a multiple of save_freq -> log
+            if self.current_episode % self.save_freq == 0:
+                with open(self.log_file_path, 'a') as csv_file:
+                    csv_writer = csv.writer(csv_file)
+                    csv_writer.writerow([self.current_timestep, self.total_reward])
+
+            # increment number of episodes
+            self.current_episode += 1
+            # reset total_reward
+            self.total_reward = 0
+
+        return True

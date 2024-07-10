@@ -29,7 +29,8 @@ parser.add_argument("--num_envs", type=int, default=None, help="Number of enviro
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
-parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
+parser.add_argument('--algo', type=str, choices=['PPO', 'SAC', 'JSSAC'])
+parser.add_argument('--guide-policy', type=str, help='Path to the guide policy checkpoint')
 parser.add_argument('--eval-env', type=str, default=None, help='Name of the environment to evaluate the model')
 
 # append AppLauncher cli args
@@ -51,17 +52,17 @@ import numpy as np
 import os
 from datetime import datetime
 
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import PPO, SAC, JSSAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env import VecFrameStack, VecNormalize
 
 from omni.isaac.lab.utils.dict import print_dict
 from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
 
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import load_cfg_from_registry, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.sb3 import Sb3VecEnvWrapper, process_sb3_cfg
+from omni.isaac.lab_tasks.utils.wrappers.sb3 import Sb3VecEnvWrapper, process_sb3_cfg, RewardEstimateCallback
 
 
 def main():
@@ -72,6 +73,11 @@ def main():
     )
 
     if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
+        # when using SAC, max_ierations corresponds to the total number of timesteps
+        if args_cli.max_iterations:
+            agent_cfg["n_timesteps"] = args_cli.max_iterations
+    elif args_cli.algo == 'JSSAC':
         agent_cfg = load_cfg_from_registry(args_cli.task, "sb3_sac_cfg_entry_point")
         # when using SAC, max_ierations corresponds to the total number of timesteps
         if args_cli.max_iterations:
@@ -118,6 +124,9 @@ def main():
     # set the seed
     env.seed(seed=agent_cfg["seed"])
 
+    if "frame_stack" in agent_cfg:
+        env = VecFrameStack(env, agent_cfg.pop("frame_stack"), channels_order="first")
+
     if "normalize_input" in agent_cfg:
         env = VecNormalize(
             env,
@@ -125,13 +134,15 @@ def main():
             norm_obs="normalize_input" in agent_cfg and agent_cfg.pop("normalize_input"),
             norm_reward="normalize_value" in agent_cfg and agent_cfg.pop("normalize_value"),
             clip_obs="clip_obs" in agent_cfg and agent_cfg.pop("clip_obs"),
-            gamma=agent_cfg["gamma"],
+            gamma=0.99,
             clip_reward=np.inf,
         )
 
     # create agent from stable baselines
     if args_cli.algo == 'SAC':
         agent = SAC(policy_arch, env, verbose=1, **agent_cfg)
+    elif args_cli.algo == 'JSSAC':
+        agent = JSSAC(policy_arch, env, args_cli.guide_policy, 5, 20, 0.95, sac_kwargs=agent_cfg, verbose=1)
     else:
         agent = PPO(policy_arch, env, verbose=1, **agent_cfg)
     # configure the logger
@@ -143,16 +154,22 @@ def main():
         try:
             eval_env = gym.make(args_cli.eval_env, max_episode_steps=1000)
             callback = EvalCallback(eval_env, best_model_save_path=log_dir, log_path=log_dir,
-                                    eval_freq=10_000 / args_cli.num_envs, n_eval_episodes=1, render=False,
+                                    eval_freq=10_000 // args_cli.num_envs, n_eval_episodes=1, render=False,
                                     deterministic=True, verbose=1)
         except:
             print('Could not create evaluation environment. Use checkpoint callback instead')
-            callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+            callback = CheckpointCallback(save_freq=10_000 // args_cli.num_envs, save_path=log_dir,
+                                          name_prefix="model", verbose=2)
     else:
-        callback = CheckpointCallback(save_freq=1000, save_path=log_dir, name_prefix="model", verbose=2)
+        callback = CheckpointCallback(save_freq=10_000 // args_cli.num_envs, save_path=log_dir,
+                                      name_prefix="model", verbose=2)
+
+    # use CurrentBestRewardCallback to track the reward progression over time
+    reward_estimate_callback = RewardEstimateCallback(log_dir, save_freq=10, env_idx=0,
+                                                      num_envs=args_cli.num_envs)
 
     # train the agent
-    agent.learn(total_timesteps=n_timesteps, callback=callback)
+    agent.learn(total_timesteps=n_timesteps, callback=[callback, reward_estimate_callback])
     # save the final model
     agent.save(os.path.join(log_dir, "model"))
 
