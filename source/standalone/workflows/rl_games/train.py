@@ -27,6 +27,7 @@ parser.add_argument(
     "--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes."
 )
 parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
+parser.add_argument('--algo', type=str, choices=['PPO', 'SAC'])
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -68,7 +69,11 @@ def main():
     env_cfg = parse_env_cfg(
         args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
-    agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_cfg_entry_point")
+    if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_sac_cfg_entry_point")
+    else:
+        agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_ppo_cfg_entry_point")
+
     # override from command line
     if args_cli_seed is not None:
         agent_cfg["params"]["seed"] = args_cli_seed

@@ -59,7 +59,10 @@ def main():
     env_cfg = parse_env_cfg(
         args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
-    agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_cfg_entry_point")
+    if args_cli.algo == 'SAC':
+        agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_sac_cfg_entry_point")
+    else:
+        agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_ppo_cfg_entry_point")
 
     # wrap around environment for rl-games
     rl_device = agent_cfg["params"]["config"]["device"]
