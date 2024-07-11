@@ -55,17 +55,16 @@ params:
     num_warmup_steps: 100
     num_actors: -1  # configured from the script (based on num_envs)
     normalize_advantage: True
-    gamma: 0.
+    gamma: 0.99
     alpha_lr: 0.005
-    actor_lr: 0.0005
-    critic_lr: 0.0005
+    actor_lr: 0.0003
+    critic_lr: 0.0003
     critic_tau: 0.005
     num_steps_per_episode: 1  # How many env steps before the next gradient step
-    max_epochs: 1000000       # total number of steps = num_steps_per_episode * max_epochs
+    max_epochs: 5000000       # total number of steps = num_steps_per_episode * max_epochs
     save_best_after: 100
-    save_frequency: 5000
+    save_frequency: 20_000
     batch_size: 4096
-    mini_epochs: 8
     reward_shaper:
       scale_value: 1.0
     init_alpha: 1.0
