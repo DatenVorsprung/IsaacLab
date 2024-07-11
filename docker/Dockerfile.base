@@ -88,7 +88,7 @@ RUN tar -xzf ${ISAACLAB_PATH}/dependencies/dv_sb3.tar.gz -C ${ISAACLAB_PATH}/dep
 
 # unpack the DV_rl_games repo and install it
 RUN tar -xzf ${ISAACLAB_PATH}/dependencies/dv_rl_games.tar.gz -C ${ISAACLAB_PATH}/dependencies/ && \
-    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install -e ${ISAACLAB_PATH}/dependencies/DV_rl_games/
+    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install ${ISAACLAB_PATH}/dependencies/DV_rl_games/
 
 # aliasing isaaclab.sh and python for convenience
 RUN echo "export ISAACLAB_PATH=${ISAACLAB_PATH}" >> ${HOME}/.bashrc && \
