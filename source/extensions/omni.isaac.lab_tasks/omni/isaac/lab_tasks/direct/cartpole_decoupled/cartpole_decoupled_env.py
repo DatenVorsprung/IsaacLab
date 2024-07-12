@@ -67,7 +67,7 @@ class CartpoleDecoupledEnvCfg(DirectRLEnvCfg):
 class CartpoleDecoupledEnv(DirectRLEnv):
     cfg: CartpoleDecoupledEnvCfg
 
-    def __init__(self, cfg: CartpoleDecoupledEnvCfg, render_mode: str | None = None, **kwargs):
+    def __init__(self, cfg: CartpoleDecoupledEnvCfg, render_mode: str | None = None, randomize: bool = False, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
 
         self._cart_dof_idx, _ = self.cartpole.find_joints(self.cfg.cart_dof_name)
@@ -88,7 +88,7 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
         self.action_space.is_bounded()
 
-        self._custom_randomizer = CartPoleDecoupledRandomizer()
+        self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
         if self._custom_randomizer.attribute_randomize:
             self._custom_randomizer.attribute_randomizer(self)

@@ -4,7 +4,7 @@ import yaml
 import torch
 
 class CartPoleDecoupledRandomizer:
-    def __init__(self):
+    def __init__(self, active: bool):
 
         cwd = Path(__file__).parent
         dr_config_path = os.path.abspath(cwd / "agents/domain_randomization_cfg.yaml")
@@ -16,6 +16,10 @@ class CartPoleDecoupledRandomizer:
         self.attribute_randomize = False
         self.action_randomize = False
         self.observation_randomize = False
+
+        if not active:
+            return
+
         if self.dr_cfg is not None:
             if 'randomize' in self.dr_cfg['custom_domain_randomization']:
                 if self.dr_cfg['custom_domain_randomization']['randomize']:

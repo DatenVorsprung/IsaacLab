@@ -32,6 +32,7 @@ parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy 
 parser.add_argument('--algo', type=str, choices=['PPO', 'SAC', 'JSSAC'])
 parser.add_argument('--guide-policy', type=str, help='Path to the guide policy checkpoint')
 parser.add_argument('--eval-env', type=str, default=None, help='Name of the environment to evaluate the model')
+parser.add_argument('--randomize', action='store_true', default=False, help='Use domain randomization')
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -107,7 +108,8 @@ def main():
     n_timesteps = agent_cfg.pop("n_timesteps")
 
     # create isaac environment
-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+    env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None,
+                   randomize=args_cli.randomize)
     # wrap for video recording
     if args_cli.video:
         video_kwargs = {
