@@ -93,7 +93,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     cfg: CartpoleDecoupledRGBCameraEnvCfg
 
     def __init__(
-        self, cfg: CartpoleDecoupledRGBCameraEnvCfg, render_mode: str | None = None, **kwargs
+        self, cfg: CartpoleDecoupledRGBCameraEnvCfg, render_mode: str | None = None, randomize: bool = False, **kwargs
     ):
         super().__init__(cfg, render_mode, **kwargs)
 
@@ -113,10 +113,10 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.max_accel = self.cfg.max_accel
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
 
-        self._custom_randomizer = CartPoleDecoupledRandomizer()
+        self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
-        if self._custom_randomizer.custom_randomize:
-            self._custom_randomizer.randomizer(self)
+        if self._custom_randomizer.attribute_randomize:
+            self._custom_randomizer.attribute_randomizer(self)
 
         if len(self.cfg.tiled_camera.data_types) != 1:
             raise ValueError(
@@ -219,8 +219,8 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         """ Overridden step method; used for applying decoupled physics """
 
         # add action noise
-        if self.cfg.action_noise_model:
-            action = self._action_noise_model.apply(action.clone())
+        if self._custom_randomizer.action_randomize:
+            action = self._custom_randomizer.action_randomizer(self, action.clone())
 
         # store actions and current state in buffer
         self._pre_physics_step(action)
@@ -276,8 +276,8 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
         # add observation noise
         # note: we apply no noise to the state space (since it is used for critic networks)
-        if self.cfg.observation_noise_model:
-            self.obs_buf["policy"] = self._observation_noise_model.apply(self.obs_buf["policy"])
+        if self._custom_randomizer.observation_randomize:
+            self.obs_buf["policy"] = self._custom_randomizer.observation_randomizer(self, self.obs_buf["policy"])
 
         self.time_steps += 1
 
