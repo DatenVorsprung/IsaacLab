@@ -39,7 +39,8 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": CartpoleDecoupledRGBCameraEnvCfg,
-        "rl_games_cfg_entry_point": f"{agents.__name__}:rl_games_camera_ppo_cfg.yaml",
+        "rl_games_ppo_cfg_entry_point": f"{agents.__name__}:rl_games_camera_ppo_cfg.yaml",
+        "rl_games_sac_cfg_entry_point": f"{agents.__name__}:rl_games_camera_sac_cfg.yaml",
         "sb3_sac_cfg_entry_point": f"{agents.__name__}:sb3_sac_video_cfg.yaml",
         "sb3_ppo_cfg_entry_point": f"{agents.__name__}:sb3_ppo_video_cfg.yaml",
     },
