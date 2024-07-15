@@ -22,13 +22,34 @@ params:
       continuous:
         mu_activation: None
         sigma_activation: None
-
         mu_init:
           name: default
         sigma_init:
           name: const_initializer
           val: 0
         fixed_sigma: True
+    cnn:
+      type: conv2d
+      activation: relu
+      permute_input: False
+      initializer:
+        name: default
+      regularizer:
+        name: None
+      convs:
+        - filters: 32
+          kernel_size: 8
+          strides: 4
+          padding: 0
+        - filters: 64
+          kernel_size: 4
+          strides: 2
+          padding: 0
+        - filters: 64
+          kernel_size: 3
+          strides: 1
+          padding: 0
+
     mlp:
       units: [256, 256]
       activation: relu
