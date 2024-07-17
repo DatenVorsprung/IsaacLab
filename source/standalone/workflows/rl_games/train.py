@@ -91,7 +91,7 @@ def main():
     agent_cfg["params"]["config"]["train_dir"] = log_root_path
     agent_cfg["params"]["config"]["full_experiment_name"] = log_dir
 
-    frame_stack = agent_cfg["params"]["env"].get("frame_stack", 1)
+    env_cfg.frame_stack = agent_cfg["params"]["env"].get("frame_stack", 1)
 
     # multi-gpu training config
     if args_cli.distributed:

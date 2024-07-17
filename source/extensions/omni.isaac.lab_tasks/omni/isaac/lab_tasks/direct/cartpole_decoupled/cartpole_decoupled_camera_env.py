@@ -53,7 +53,7 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     num_channels = 3
     obs_img_width = 84
     obs_img_height = 84
-
+    frame_stack = 1
 
     # simulation
     sim: SimulationCfg = CartpoleDecoupledRGBCameraSimConfig()
