@@ -112,7 +112,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
         self.max_accel = self.cfg.max_accel
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
-        self.obs_buf = deque(maxlen=self.cfg.frame_stack)
+        self.obs_buf = {'policy': deque(maxlen=self.cfg.frame_stack)}
 
         self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
@@ -279,12 +279,12 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         # note: we apply no noise to the state space (since it is used for critic networks)
         if self._custom_randomizer.observation_randomize:
             obs = self._custom_randomizer.observation_randomizer(self, obs)
-        self.obs_buf.append(obs)
+        self.obs_buf['policy'].append(obs)
 
         self.time_steps += 1
 
         # return observations, rewards, resets and extras
-        return torch.cat(list(self.obs_buf)), self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
+        return torch.cat(list(self.obs_buf['policy'])), self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
     def _apply_action(self) -> None:
         self.cartpole.set_joint_effort_target(self.actions, joint_ids=self._cart_dof_idx)
@@ -345,7 +345,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         reset_time_steps = torch.ones(self.num_envs, device=self.device)
         reset_time_steps[env_ids] = 0.
         for _ in range(self.cfg.frame_stack):
-            self.obs_buf.append(self._get_observations())
+            self.obs_buf['policy'].append(self._get_observations())
         self.time_steps = self.time_steps * reset_time_steps
 
 
