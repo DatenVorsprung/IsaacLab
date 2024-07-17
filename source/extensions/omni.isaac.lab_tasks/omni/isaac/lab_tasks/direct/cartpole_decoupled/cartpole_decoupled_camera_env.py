@@ -273,18 +273,20 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
                 self.event_manager.apply(mode="interval", dt=self.step_dt)
 
         # get observation and put it into obs_buf
-        obs = self._get_observations()
+        obs_buf = self._get_observations()
 
         # add observation noise
         # note: we apply no noise to the state space (since it is used for critic networks)
+        # the noise will only be added to the observation that entered the obs_buf last
         if self._custom_randomizer.observation_randomize:
+            obs = obs_buf['policy'][-1]
             obs = self._custom_randomizer.observation_randomizer(self, obs)
-        self.obs_buf['policy'].append(obs)
+            obs_buf['policy'][-1] = obs
 
         self.time_steps += 1
 
         # return observations, rewards, resets and extras
-        return torch.cat(list(self.obs_buf['policy'])), self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
+        return obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
     def _apply_action(self) -> None:
         self.cartpole.set_joint_effort_target(self.actions, joint_ids=self._cart_dof_idx)
@@ -293,7 +295,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         img = self._camera.data.output['rgb'].clone()
         img = torchvision.transforms.Grayscale()(img[:, :, :, :3].permute(0, 3, 1, 2))
         img = torchvision.transforms.Resize((self.cfg.obs_img_width, self.cfg.obs_img_height), interpolation=torchvision.transforms.InterpolationMode.BICUBIC)(img) / 255.
-        return img
+        # add image to observation buffer and return the whole buffer
+        self.obs_buf['policy'].append(img)
+        return {'policy': torch.cat(list(self.obs_buf['policy']), dim=1)}
 
     def _get_rewards(self) -> torch.Tensor:
         # reward for keeping the pole upright, the cart in the middle, and the system alive
@@ -344,8 +348,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
         reset_time_steps = torch.ones(self.num_envs, device=self.device)
         reset_time_steps[env_ids] = 0.
+        # fill obs_buf
         for _ in range(self.cfg.frame_stack):
-            self.obs_buf['policy'].append(self._get_observations())
+            self._get_observations()
         self.time_steps = self.time_steps * reset_time_steps
 
 
