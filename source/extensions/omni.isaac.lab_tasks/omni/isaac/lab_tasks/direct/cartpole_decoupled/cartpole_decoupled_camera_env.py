@@ -112,8 +112,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
         self.max_accel = self.cfg.max_accel
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
-        self.frame_stack = kwargs.get("frame_stack", 1)
-        self.obs_buf = deque(maxlen=self.frame_stack)
+        self.obs_buf = deque(maxlen=self.cfg.frame_stack)
 
         self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
@@ -345,7 +344,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
         reset_time_steps = torch.ones(self.num_envs, device=self.device)
         reset_time_steps[env_ids] = 0.
-        for _ in range(self.frame_stack):
+        for _ in range(self.cfg.frame_stack):
             self.obs_buf.append(self._get_observations())
         self.time_steps = self.time_steps * reset_time_steps
 
