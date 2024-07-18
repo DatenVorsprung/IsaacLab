@@ -85,10 +85,10 @@ params:
     max_epochs: 5000000       # total number of steps = num_steps_per_episode * max_epochs
     save_best_after: 100
     save_frequency: 20_000
-    batch_size: 4096
+    batch_size: 512
     reward_shaper:
       scale_value: 1.0
     init_alpha: 1.0
     learnable_temperature: true
-    replay_buffer_size: 1_000_000
+    replay_buffer_size: 500_000
     max_env_steps: 1000     # How many steps the environment can make at most
