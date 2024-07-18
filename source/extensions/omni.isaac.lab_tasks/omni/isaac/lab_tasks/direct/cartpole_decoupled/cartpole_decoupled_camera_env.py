@@ -86,7 +86,8 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     # reset
     # reset
     max_cart_pos = 0.35  # the cart is reset if it exceeds that position [m]
-    initial_pole_angle_range = [-1, 1]  # the range (in multiples of pi) in which the pole angle is sampled from on reset [rad]
+    max_pole_angle = 0.4
+    initial_pole_angle_range = [-0.2, 0.2]  # the range (in multiples of pi) in which the pole angle is sampled from on reset [rad]
 
 
 class CartpoleDecoupledCameraEnv(DirectRLEnv):
@@ -301,8 +302,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
     def _get_rewards(self) -> torch.Tensor:
         # reward for keeping the pole upright, the cart in the middle, and the system alive
-        total_reward = compute_rewards(self.joint_pos[:, self._pole_dof_idx[0]], self.joint_pos[:, self._cart_dof_idx[0]], self.joint_vel[:, self._cart_dof_idx[0]])
-        return total_reward
+        return torch.ones(self.num_envs)
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         self.joint_pos = self.cartpole.data.joint_pos
@@ -310,6 +310,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
         time_out = self.episode_length_buf >= self.max_episode_length - 1
         out_of_bounds = torch.any(torch.abs(self.joint_pos[:, self._cart_dof_idx]) > self.cfg.max_cart_pos, dim=1)
+        out_of_bounds = out_of_bounds | torch.any(torch.abs(self.joint_pos[:, self._pole_dof_idx]) > self.cfg.max_pole_angle, dim=1)
         return out_of_bounds, time_out
 
     def _reset_idx(self, env_ids: Sequence[int] | None):
@@ -322,8 +323,8 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         joint_pos[:, self._cart_dof_idx] += sample_uniform(-0.1, 0.1, joint_pos[:, self._cart_dof_idx].shape, joint_pos.device)
         # set angle to [-pi, pi]
         joint_pos[:, self._pole_dof_idx] += sample_uniform(
-            self.cfg.initial_pole_angle_range[0] * math.pi,
-            self.cfg.initial_pole_angle_range[1] * math.pi,
+            self.cfg.initial_pole_angle_range[0],
+            self.cfg.initial_pole_angle_range[1],
             joint_pos[:, self._pole_dof_idx].shape,
             joint_pos.device,
         )
