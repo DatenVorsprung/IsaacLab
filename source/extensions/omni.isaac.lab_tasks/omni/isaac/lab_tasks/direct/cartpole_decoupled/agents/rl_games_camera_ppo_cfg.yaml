@@ -32,7 +32,7 @@ params:
     cnn:
       type: conv2d
       activation: relu
-      permute_input: False
+      permute_input: True
       initializer:
           name: default
       regularizer:
