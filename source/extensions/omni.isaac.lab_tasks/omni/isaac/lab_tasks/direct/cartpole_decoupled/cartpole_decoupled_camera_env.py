@@ -53,6 +53,13 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     obs_img_width = 84
     obs_img_height = 84
 
+    # reward scales
+    rew_scale_alive = 1.0
+    rew_scale_terminated = -2.0
+    rew_scale_pole_pos = -1.0
+    rew_scale_cart_vel = -0.01
+    rew_scale_pole_vel = -0.005
+
 
     # simulation
     sim: SimulationCfg = CartpoleDecoupledRGBCameraSimConfig()
@@ -295,8 +302,20 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         return {'policy': img}
 
     def _get_rewards(self) -> torch.Tensor:
-        # reward for keeping the pole upright, the cart in the middle, and the system alive
-        return torch.ones(self.num_envs)
+        total_reward = compute_rewards(
+            self.cfg.rew_scale_alive,
+            self.cfg.rew_scale_terminated,
+            self.cfg.rew_scale_pole_pos,
+            self.cfg.rew_scale_cart_vel,
+            self.cfg.rew_scale_pole_vel,
+            self.joint_pos[:, self._pole_dof_idx[0]],
+            self.joint_vel[:, self._pole_dof_idx[0]],
+            self.joint_pos[:, self._cart_dof_idx[0]],
+            self.joint_vel[:, self._cart_dof_idx[0]],
+            self.reset_terminated,
+        )
+        return total_reward
+
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         self.joint_pos = self.cartpole.data.joint_pos
@@ -348,9 +367,21 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
 @torch.jit.script
 def compute_rewards(
-    pole_angle: torch.Tensor,
+    rew_scale_alive: float,
+    rew_scale_terminated: float,
+    rew_scale_pole_pos: float,
+    rew_scale_cart_vel: float,
+    rew_scale_pole_vel: float,
+    pole_pos: torch.Tensor,
+    pole_vel: torch.Tensor,
     cart_pos: torch.Tensor,
     cart_vel: torch.Tensor,
+    reset_terminated: torch.Tensor,
 ):
-    total_reward = 1 + torch.cos(pole_angle) - 0.01 * torch.abs(cart_pos) - 0.01 * torch.abs(cart_vel)
+    rew_alive = rew_scale_alive * (1.0 - reset_terminated.float())
+    rew_termination = rew_scale_terminated * reset_terminated.float()
+    rew_pole_pos = rew_scale_pole_pos * torch.sum(torch.square(pole_pos).unsqueeze(dim=1), dim=-1)
+    rew_cart_vel = rew_scale_cart_vel * torch.sum(torch.abs(cart_vel).unsqueeze(dim=1), dim=-1)
+    rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
+    total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
     return total_reward
