@@ -162,13 +162,13 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.single_observation_space["policy"] = gym.spaces.Box(
             low=0.,
             high=1.,
-            shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.frame_stack),
+            shape=(self.cfg.frame_stack, self.cfg.tiled_camera.height, self.cfg.tiled_camera.width),
         )
         if self.num_states > 0:
             self.single_observation_space["critic"] = gym.spaces.Box(
                 low=0.,
                 high=1.,
-                shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.frame_stack),
+                shape=(self.cfg.frame_stack, self.cfg.tiled_camera.height, self.cfg.tiled_camera.width),
             )
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.num_actions,))
 
