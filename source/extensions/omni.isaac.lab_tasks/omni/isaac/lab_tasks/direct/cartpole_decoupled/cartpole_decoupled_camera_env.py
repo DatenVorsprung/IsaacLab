@@ -51,9 +51,15 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     num_observations = 5
     num_states = 0
     num_channels = 3
-    obs_img_width = 84
-    obs_img_height = 84
     frame_stack = 1
+
+    # reward scales
+    rew_scale_alive = 1.0
+    rew_scale_terminated = -2.0
+    rew_scale_pole_pos = -1.0
+    rew_scale_cart_vel = -0.01
+    rew_scale_pole_vel = -0.005
+
 
     # simulation
     sim: SimulationCfg = CartpoleDecoupledRGBCameraSimConfig()
@@ -64,15 +70,15 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     pole_dof_name = "cart_to_pole"
 
     # camera
-    tiled_camera: CameraCfg = CameraCfg(
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
         prim_path="/World/envs/env_.*/Camera",
-        offset=CameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
             focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1e5)
         ),
-        width=300,
-        height=200,
+        width=80,
+        height=80,
     )
     num_observations = num_channels * tiled_camera.height * tiled_camera.width
     write_image_to_file = False
@@ -156,13 +162,13 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.single_observation_space["policy"] = gym.spaces.Box(
             low=0.,
             high=1.,
-            shape=(self.cfg.frame_stack, self.cfg.obs_img_width, self.cfg.obs_img_height),
+            shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.frame_stack),
         )
         if self.num_states > 0:
             self.single_observation_space["critic"] = gym.spaces.Box(
                 low=0.,
                 high=1.,
-                shape=(self.cfg.frame_stack, self.cfg.obs_img_width, self.cfg.obs_img_height),
+                shape=(self.cfg.tiled_camera.height, self.cfg.tiled_camera.width, self.cfg.frame_stack),
             )
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.num_actions,))
 
@@ -176,7 +182,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     def _setup_scene(self):
         """Setup the scene with the cartpole and camera."""
         self.cartpole = Articulation(self.cfg.robot_cfg)
-        self._camera = Camera(self.cfg.tiled_camera)
+        self._tiled_camera = TiledCamera(self.cfg.tiled_camera)
         # add ground plane
         spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg(size=(500, 500)))
         # clone, filter, and replicate
@@ -185,7 +191,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
         # add articultion and sensors to scene
         self.scene.articulations["cartpole"] = self.cartpole
-        self.scene.sensors["tiled_camera"] = self._camera
+        self.scene.sensors["tiled_camera"] = self._tiled_camera
         # add lights
         light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
         light_cfg.func("/World/Light", light_cfg)
@@ -293,16 +299,25 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.cartpole.set_joint_effort_target(self.actions, joint_ids=self._cart_dof_idx)
 
     def _get_observations(self) -> dict:
-        img = self._camera.data.output['rgb'].clone()
-        img = torchvision.transforms.Grayscale()(img[:, :, :, :3].permute(0, 3, 1, 2))
-        img = torchvision.transforms.Resize((self.cfg.obs_img_width, self.cfg.obs_img_height), interpolation=torchvision.transforms.InterpolationMode.BICUBIC)(img) / 255.
-        # add image to observation buffer and return the whole buffer
+        img = self._tiled_camera.data.output['rgb'].clone()
+        img = torchvision.transforms.Grayscale()(img.permute(0, 3, 1, 2))
         self.obs_buf['policy'].append(img)
         return {'policy': torch.cat(list(self.obs_buf['policy']), dim=1)}
 
     def _get_rewards(self) -> torch.Tensor:
-        # reward for keeping the pole upright, the cart in the middle, and the system alive
-        return torch.ones(self.num_envs)
+        total_reward = compute_rewards(
+            self.cfg.rew_scale_alive,
+            self.cfg.rew_scale_terminated,
+            self.cfg.rew_scale_pole_pos,
+            self.cfg.rew_scale_cart_vel,
+            self.cfg.rew_scale_pole_vel,
+            self.joint_pos[:, self._pole_dof_idx[0]],
+            self.joint_vel[:, self._pole_dof_idx[0]],
+            self.joint_pos[:, self._cart_dof_idx[0]],
+            self.joint_vel[:, self._cart_dof_idx[0]],
+            self.reset_terminated,
+        )
+        return total_reward
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         self.joint_pos = self.cartpole.data.joint_pos
@@ -357,9 +372,21 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
 @torch.jit.script
 def compute_rewards(
-    pole_angle: torch.Tensor,
+    rew_scale_alive: float,
+    rew_scale_terminated: float,
+    rew_scale_pole_pos: float,
+    rew_scale_cart_vel: float,
+    rew_scale_pole_vel: float,
+    pole_pos: torch.Tensor,
+    pole_vel: torch.Tensor,
     cart_pos: torch.Tensor,
     cart_vel: torch.Tensor,
+    reset_terminated: torch.Tensor,
 ):
-    total_reward = 1 + torch.cos(pole_angle) - 0.01 * torch.abs(cart_pos) - 0.01 * torch.abs(cart_vel)
+    rew_alive = rew_scale_alive * (1.0 - reset_terminated.float())
+    rew_termination = rew_scale_terminated * reset_terminated.float()
+    rew_pole_pos = rew_scale_pole_pos * torch.sum(torch.square(pole_pos).unsqueeze(dim=1), dim=-1)
+    rew_cart_vel = rew_scale_cart_vel * torch.sum(torch.abs(cart_vel).unsqueeze(dim=1), dim=-1)
+    rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
+    total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
     return total_reward
