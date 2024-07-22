@@ -93,7 +93,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     cfg: CartpoleDecoupledRGBCameraEnvCfg
 
     def __init__(
-        self, cfg: CartpoleDecoupledRGBCameraEnvCfg, render_mode: str | None = None, **kwargs
+        self, cfg: CartpoleDecoupledRGBCameraEnvCfg, render_mode: str | None = None,  randomize: bool = False, **kwargs
     ):
         super().__init__(cfg, render_mode, **kwargs)
 
@@ -113,10 +113,10 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.max_accel = self.cfg.max_accel
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
 
-        self._custom_randomizer = CartPoleDecoupledRandomizer()
+        self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
-        if self._custom_randomizer.custom_randomize:
-            self._custom_randomizer.randomizer(self)
+        if self._custom_randomizer.attribute_randomize:
+            self._custom_randomizer.attribute_randomize(self)
 
         if len(self.cfg.tiled_camera.data_types) != 1:
             raise ValueError(
