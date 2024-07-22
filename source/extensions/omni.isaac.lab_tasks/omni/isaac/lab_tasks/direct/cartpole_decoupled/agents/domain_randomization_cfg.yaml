@@ -40,8 +40,25 @@ custom_domain_randomization:
   action:
     operation: 'additive'
     distribution: 'gaussian'
-    distribution_params: [ 0.0, 0.05 ]
-  observation:
-    operation: 'additive'
-    distribution: 'gaussian'
     distribution_params: [ 0.0, 0.001 ]
+  observation:
+    cart_position:
+      operation: 'additive'
+      distribution: 'gaussian'
+      distribution_params: [ 0.0, 0.001 ]
+    cart_velocity:
+      operation: 'additive'
+      distribution: 'gaussian'
+      distribution_params: [ 0.0, 0.001 ]
+    sin_angle:
+      operation: 'additive'
+      distribution: 'gaussian'
+      distribution_params: [ 0.0, 0.001 ]
+    cos_angle:
+      operation: 'additive'
+      distribution: 'gaussian'
+      distribution_params: [ 0.0, 0.001 ]
+    pole_velocity:
+      operation: 'additive'
+      distribution: 'gaussian'
+      distribution_params: [ 0.0, 0.001 ]

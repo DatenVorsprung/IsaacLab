@@ -126,39 +126,50 @@ class CartPoleDecoupledRandomizer:
 
     def observation_randomizer(self, task, observation):
 
+        dict_observations = {'cart_position': observation[:, 0], 'cart_velocity': observation[:, 1], 'sin_angle': observation[:, 2],
+                             'cos_angle': observation[:, 3], 'pole_velocity': observation[:, 4]}
+
         custom_distributions = ['uniform', 'gaussian']
         custom_operations = ['additive', 'scaling']
 
         if self.observation_randomize:
-            if not set(('operation', 'distribution', 'distribution_params')).issubset(self.observation_params.keys()):
-                print('Please provide all ingredients for randomizing the observation: operation, distribution, distribution_params.')
-            else:
-                if not self.observation_params['distribution'] in custom_distributions:
-                    print('Please select one of the two distributions: uniform, gaussian.')
-                else:
-                    if self.observation_params['distribution'] == 'uniform':
-                        low = self.observation_params['distribution_params'][0]
-                        high = self.observation_params['distribution_params'][1]
-                        observation_noise = ((low - high) * torch.rand(size=observation.shape, device=task.device) + high)
-                        if not self.observation_params['operation'] in custom_operations:
-                            print('Please select one of the two operations: additive, scaling.')
+            if self.observation_params is not None:
+                for obs in self.observation_params.keys():
+                    if obs not in dict_observations.keys():
+                        print(f'{obs} is not a valid observation for the custom domain randomization.')
+                for obs in dict_observations.keys():
+                    if not set(('operation', 'distribution', 'distribution_params')).issubset(self.observation_params[obs].keys()):
+                        print('Please provide all ingredients for randomizing the observation: operation, distribution, distribution_params.')
+                    else:
+                        if not self.observation_params[obs]['distribution'] in custom_distributions:
+                            print('Please select one of the two distributions: uniform, gaussian.')
                         else:
-                            if self.observation_params['operation'] == 'additive':
-                                observation += observation_noise
-                            if self.observation_params['operation'] == 'scaling':
-                                observation *= observation_noise
+                            if self.observation_params[obs]['distribution'] == 'uniform':
+                                low = self.observation_params[obs]['distribution_params'][0]
+                                high = self.observation_params[obs]['distribution_params'][1]
+                                observation_noise = ((low - high) * torch.rand(size=dict_observations[obs].shape, device=task.device) + high)
+                                if not self.observation_params[obs]['operation'] in custom_operations:
+                                    print('Please select one of the two operations: additive, scaling.')
+                                else:
+                                    if self.observation_params['operation'] == 'additive':
+                                        dict_observations[obs] += observation_noise
+                                    if self.observation_params['operation'] == 'scaling':
+                                        dict_observations[obs] *= observation_noise
 
-                    if self.observation_params['distribution'] == 'gaussian':
-                        mean = self.observation_params['distribution_params'][0]
-                        sd = self.observation_params['distribution_params'][1]
-                        observation_noise = torch.normal(mean=(mean * torch.ones(size=observation.shape, device=task.device)), std=(sd * torch.ones(size=observation.shape, device=task.device)))
-                        if not self.observation_params['operation'] in custom_operations:
-                            print('Please select one of the two operations: additive, scaling.')
-                        else:
-                            if self.observation_params['operation'] == 'additive':
-                                observation += observation_noise
-                            if self.observation_params['operation'] == 'scaling':
-                                observation *= observation_noise
+                            if self.observation_params[obs]['distribution'] == 'gaussian':
+                                mean = self.observation_params[obs]['distribution_params'][0]
+                                sd = self.observation_params[obs]['distribution_params'][1]
+                                observation_noise = torch.normal(mean=(mean * torch.ones(size=dict_observations[obs].shape, device=task.device)), std=(sd * torch.ones(size=dict_observations[obs].shape, device=task.device)))
+                                if not self.observation_params[obs]['operation'] in custom_operations:
+                                    print('Please select one of the two operations: additive, scaling.')
+                                else:
+                                    if self.observation_params[obs]['operation'] == 'additive':
+                                        dict_observations[obs] += observation_noise
+                                    if self.observation_params[obs]['operation'] == 'scaling':
+                                        dict_observations[obs] *= observation_noise
+            else:
+                print('No attributes are selected to be randomized.')
+
         return observation
 
 
