@@ -13,7 +13,7 @@ import torchvision.transforms
 from torchdiffeq import odeint
 from collections.abc import Sequence
 from collections import deque
-
+from pathlib import Path
 from omni.isaac.lab_assets.cartpole_decoupled import CARTPOLE_DECOUPLED_CFG
 
 import omni.isaac.lab.sim as sim_utils
@@ -27,6 +27,7 @@ from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.utils.math import sample_uniform
 
 from omni.isaac.lab_tasks.direct.cartpole_decoupled.randomizer_cartpole_decoupled import CartPoleDecoupledRandomizer
+from omni.isaac.lab_tasks.direct.cartpole_decoupled.autoencoder import Autoencoder
 
 
 @configclass
@@ -120,6 +121,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.max_accel = self.cfg.max_accel
         self.time_steps = torch.zeros(self.num_envs, device=self.device)
         self.obs_buf = {'policy': deque(maxlen=self.cfg.frame_stack)}
+        self.autoencoder = Autoencoder(base_channel_size=32, latent_dim=64, num_input_channels=3, input_shape=(80, 80))
+        self.autoencoder_weights_path = Path(__file__).parent / "cnn_autoencoder_colored_pole_no_markers_l64.pth"
+        self.autoencoder.load_state_dict(torch.load(self.autoencoder_weights_path))
 
         self._custom_randomizer = CartPoleDecoupledRandomizer(active=randomize)
 
