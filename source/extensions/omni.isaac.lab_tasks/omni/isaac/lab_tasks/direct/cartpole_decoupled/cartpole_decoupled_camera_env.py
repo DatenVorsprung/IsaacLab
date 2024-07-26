@@ -70,15 +70,15 @@ class CartpoleDecoupledRGBCameraEnvCfg(DirectRLEnvCfg):
     pole_dof_name = "cart_to_pole"
 
     # camera
-    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+    tiled_camera: CameraCfg = CameraCfg(
         prim_path="/World/envs/env_.*/Camera",
-        offset=TiledCameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
+        offset=CameraCfg.OffsetCfg(pos=(2.0, 0.5, 2.5), rot=( 0.5, 0.5, 0.5, 0.5), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
             focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1e5)
         ),
-        width=80,
-        height=80,
+        width=300,
+        height=200,
     )
     num_observations = num_channels * tiled_camera.height * tiled_camera.width
     write_image_to_file = False
@@ -162,13 +162,13 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
         self.single_observation_space["policy"] = gym.spaces.Box(
             low=0.,
             high=1.,
-            shape=(self.cfg.frame_stack, self.cfg.tiled_camera.height, self.cfg.tiled_camera.width),
+            shape=(self.cfg.frame_stack * 64,),
         )
         if self.num_states > 0:
             self.single_observation_space["critic"] = gym.spaces.Box(
                 low=0.,
                 high=1.,
-                shape=(self.cfg.frame_stack, self.cfg.tiled_camera.height, self.cfg.tiled_camera.width),
+                shape=(self.cfg.frame_stack * 64,),
             )
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.num_actions,))
 
@@ -182,7 +182,7 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
     def _setup_scene(self):
         """Setup the scene with the cartpole and camera."""
         self.cartpole = Articulation(self.cfg.robot_cfg)
-        self._tiled_camera = TiledCamera(self.cfg.tiled_camera)
+        self._tiled_camera = Camera(self.cfg.tiled_camera)
         # add ground plane
         spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg(size=(500, 500)))
         # clone, filter, and replicate
@@ -300,8 +300,9 @@ class CartpoleDecoupledCameraEnv(DirectRLEnv):
 
     def _get_observations(self) -> dict:
         img = self._tiled_camera.data.output['rgb'].clone()
-        img = torchvision.transforms.Grayscale()(img.permute(0, 3, 1, 2))
-        self.obs_buf['policy'].append(img)
+        img = img[:, :, :, :3].permute(0, 3, 1, 2)
+        img = torchvision.transforms.Resize((80, 80), interpolation=torchvision.transforms.InterpolationMode.BICUBIC)(img) / 255.
+        self.obs_buf['policy'].append(torch.rand(self.num_envs, 64))
         return {'policy': torch.cat(list(self.obs_buf['policy']), dim=1)}
 
     def _get_rewards(self) -> torch.Tensor:
