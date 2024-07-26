@@ -34,7 +34,8 @@ INSTALL_REQUIRES = [
     "moviepy",
     # decoupled cartpole environment
     "torchdiffeq",
-    "onnxruntime"
+    "onnxruntime",
+    "lightning"
 ]
 
 PYTORCH_INDEX_URL = ["https://download.pytorch.org/whl/cu118"]
