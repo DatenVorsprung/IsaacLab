@@ -60,7 +60,7 @@ class CartpoleDecoupledEnvCfg(DirectRLEnvCfg):
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=4.0, replicate_physics=True)
 
     # reset
-    max_cart_pos = 0.35  # the cart is reset if it exceeds that position [m]
+    max_cart_pos = 0.4  # the cart is reset if it exceeds that position [m]
     initial_pole_angle_range = [-1, 1]  # the range (in multiples of pi) in which the pole angle is sampled from on reset [rad]
 
 
@@ -78,10 +78,10 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         self.joint_vel = self.cartpole.data.joint_vel
         self.state_buf = None
         self.cart_mass = 0.46 * torch.ones(self.num_envs, device=self.device)
-        self.pole_len = 0.41 * torch.ones(self.num_envs, device=self.device)
-        self.pole_mass = 0.08 * torch.ones(self.num_envs, device=self.device)
+        self.pole_len = 0.43 * torch.ones(self.num_envs, device=self.device)
+        self.pole_mass = 0.1 * torch.ones(self.num_envs, device=self.device)
         self.pole_friction = 2.1e-3 * torch.ones(self.num_envs, device=self.device)
-        self.moment_of_inertia = 0.0105 * torch.ones(self.num_envs, device=self.device)
+        self.moment_of_inertia = 0.0205 * torch.ones(self.num_envs, device=self.device)
         self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
 
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
@@ -238,7 +238,7 @@ class CartpoleDecoupledEnv(DirectRLEnv):
 
         joint_pos = self.cartpole.data.default_joint_pos[env_ids]
         # set cart to [-0.1, 0.1]
-        joint_pos[:, self._cart_dof_idx] += sample_uniform(-0.1, 0.1, joint_pos[:, self._cart_dof_idx].shape, joint_pos.device)
+        joint_pos[:, self._cart_dof_idx] += sample_uniform(-0.35, 0.35, joint_pos[:, self._cart_dof_idx].shape, joint_pos.device)
         # set angle to [-pi, pi]
         joint_pos[:, self._pole_dof_idx] += sample_uniform(
             self.cfg.initial_pole_angle_range[0] * math.pi,
