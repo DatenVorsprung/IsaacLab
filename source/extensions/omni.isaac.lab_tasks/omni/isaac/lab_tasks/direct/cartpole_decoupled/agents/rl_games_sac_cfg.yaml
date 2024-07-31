@@ -62,8 +62,8 @@ params:
     critic_tau: 0.005
     num_steps_per_episode: 1  # How many env steps before the next gradient step
     max_epochs: 5000000       # total number of steps = num_steps_per_episode * max_epochs
-    save_best_after: 100
-    save_frequency: 20_000
+    save_best_after: 10
+    save_frequency: 1000
     batch_size: 4096
     reward_shaper:
       scale_value: 1.0
