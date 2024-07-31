@@ -16,11 +16,11 @@ custom_domain_randomization:
     cart_mass:
       operation: 'scaling'
       distribution: 'uniform'
-      distribution_params: [ 0.95, 1.05 ]
+      distribution_params: [ 1.0, 1.0 ]
     pole_len:
       operation: 'scaling'
       distribution: 'uniform'
-      distribution_params: [ 0.95, 1.05 ]
+      distribution_params: [ 0.98, 1.02 ]
     pole_mass:
       operation: 'scaling'
       distribution: 'uniform'
@@ -28,20 +28,20 @@ custom_domain_randomization:
     pole_friction:
       operation: 'scaling'
       distribution: 'uniform'
-      distribution_params: [ 0.95, 1.05 ]
+      distribution_params: [ 1.0, 1.0 ]
     moment_of_inertia:
       operation: 'scaling'
       distribution: 'uniform'
-      distribution_params: [ 0.95, 1.05 ]
+      distribution_params: [ 0.9, 1.1 ]
     gravity:
       operation: 'scaling'
       distribution: 'uniform'
-      distribution_params: [ 0.95, 1.05 ]
+      distribution_params: [ 1.0, 1.0 ]
   action:
-    operation: 'additive'
+    operation: 'scaling'
     distribution: 'gaussian'
-    distribution_params: [ 0.95, 1.05 ]
+    distribution_params: [ 0.99, 1.01 ]
   observation:
     operation: 'scaling'
     distribution: 'uniform'
-    distribution_params: [ 0.0, 0.001 ]
+    distribution_params: [ 1.0, 1.0 ]

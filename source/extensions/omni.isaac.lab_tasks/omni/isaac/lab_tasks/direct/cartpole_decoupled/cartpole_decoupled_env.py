@@ -78,10 +78,10 @@ class CartpoleDecoupledEnv(DirectRLEnv):
         self.joint_vel = self.cartpole.data.joint_vel
         self.state_buf = None
         self.cart_mass = 0.46 * torch.ones(self.num_envs, device=self.device)
-        self.pole_len = 0.43 * torch.ones(self.num_envs, device=self.device)
-        self.pole_mass = 0.1 * torch.ones(self.num_envs, device=self.device)
+        self.pole_len = 0.41 * torch.ones(self.num_envs, device=self.device)
+        self.pole_mass = 0.08 * torch.ones(self.num_envs, device=self.device)
         self.pole_friction = 2.1e-3 * torch.ones(self.num_envs, device=self.device)
-        self.moment_of_inertia = 0.0205 * torch.ones(self.num_envs, device=self.device)
+        self.moment_of_inertia = 0.0105 * torch.ones(self.num_envs, device=self.device)
         self.gravity = 9.81 * torch.ones(self.num_envs, device=self.device)
 
         self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(self.cfg.num_actions,))
